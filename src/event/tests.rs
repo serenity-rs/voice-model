@@ -409,7 +409,7 @@ fn serialize_heartbeat() {
         Token::Str("op"),
         Token::U8(Opcode::Heartbeat as u8),
         Token::Str("d"),
-        Token::Str("1234567890"),
+        Token::U64(1234567890),
         Token::StructEnd,
     ]);
 }
