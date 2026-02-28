@@ -6,13 +6,13 @@ description = "A Rust library for (de)serializing Discord Voice API gateway mess
 # readme = "README.md"
 include = ["src/**/*.rs", "Cargo.toml"]
 
-documentation.workspace = true
-homepage.workspace = true
-repository.workspace = true
-keywords.workspace = true
-license.workspace = true
-edition.workspace = true
-rust-version.workspace = true
+documentation = "https://docs.rs/serenity"
+homepage = "https://github.com/serenity-rs/serenity"
+repository = "https://github.com/serenity-rs/serenity.git"
+keywords = ["discord", "api"]
+license = "ISC"
+edition = "2021"
+rust-version = "1.74"
 
 [dependencies]
 bitflags = "2.4"
