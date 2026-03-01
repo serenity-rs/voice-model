@@ -48,15 +48,13 @@ pub fn deserialize_binary_event(data: &[u8]) -> Result<crate::Event, BinaryError
         return Err(BinaryError::InsufficientData);
     }
 
-    let sequence_number = read_u16(&data[0..2])?;
-    let opcode = data[2];
+    let opcode = data[0];
 
     // Log raw binary data for debugging (first 16 bytes)
     #[cfg(debug_assertions)]
     eprintln!(
-        "[DAVE Binary] Received {} bytes: seq={}, opcode={}, data={:02X?}",
+        "[DAVE Binary] Received {} bytes: opcode={}, data={:02X?}",
         data.len(),
-        sequence_number,
         opcode,
         &data[..data.len().min(16)]
     );
@@ -64,51 +62,47 @@ pub fn deserialize_binary_event(data: &[u8]) -> Result<crate::Event, BinaryError
     match opcode {
         25 => {
             // DaveMlsExternalSender
-            let external_sender = data[3..].to_vec();
+            let external_sender = data[1..].to_vec();
             Ok(crate::Event::DaveMlsExternalSender(DaveMlsExternalSender {
-                sequence_number,
                 external_sender,
             }))
         },
         27 => {
             // DaveMlsProposals
-            if data.len() < 4 {
+            if data.len() < 2 {
                 return Err(BinaryError::InsufficientData);
             }
-            let operation_type = match data[3] {
+            let operation_type = match data[1] {
                 0 => DaveMlsProposalsOperationType::Append,
                 1 => DaveMlsProposalsOperationType::Revoke,
                 other => return Err(BinaryError::InvalidOperationType(other)),
             };
-            let proposals = data[4..].to_vec();
+            let proposals = data[2..].to_vec();
             Ok(crate::Event::DaveMlsProposals(DaveMlsProposals {
-                sequence_number,
                 operation_type,
                 proposals,
             }))
         },
         29 => {
             // DaveMlsAnnounceCommitTransition
-            if data.len() < 5 {
+            if data.len() < 3 {
                 return Err(BinaryError::InsufficientData);
             }
-            let transition_id = read_u16(&data[3..5])?;
-            let commit_message = data[5..].to_vec();
+            let transition_id = read_u16(&data[1..3])?;
+            let commit_message = data[3..].to_vec();
             Ok(crate::Event::DaveMlsAnnounceCommitTransition(DaveMlsAnnounceCommitTransition {
-                sequence_number,
                 transition_id,
                 commit_message,
             }))
         },
         30 => {
             // DaveMlsWelcome
-            if data.len() < 5 {
+            if data.len() < 3 {
                 return Err(BinaryError::InsufficientData);
             }
-            let transition_id = read_u16(&data[3..5])?;
-            let welcome = data[5..].to_vec();
+            let transition_id = read_u16(&data[1..3])?;
+            let welcome = data[3..].to_vec();
             Ok(crate::Event::DaveMlsWelcome(DaveMlsWelcome {
-                sequence_number,
                 transition_id,
                 welcome,
             }))
@@ -162,7 +156,6 @@ mod tests {
     #[test]
     fn test_deserialize_external_sender() {
         let data = vec![
-            0x00, 0x01, // sequence_number = 1
             25,   // opcode = 25
             0xDE, 0xAD, 0xBE, 0xEF, // external_sender data
         ];
@@ -170,7 +163,6 @@ mod tests {
         let event = deserialize_binary_event(&data).unwrap();
         match event {
             crate::Event::DaveMlsExternalSender(payload) => {
-                assert_eq!(payload.sequence_number, 1);
                 assert_eq!(payload.external_sender, vec![0xDE, 0xAD, 0xBE, 0xEF]);
             },
             _ => panic!("Wrong event type"),
@@ -180,7 +172,6 @@ mod tests {
     #[test]
     fn test_deserialize_proposals() {
         let data = vec![
-            0x00, 0x02, // sequence_number = 2
             27,   // opcode = 27
             0,    // operation_type = Append
             0xCA, 0xFE, // proposals data
@@ -189,7 +180,6 @@ mod tests {
         let event = deserialize_binary_event(&data).unwrap();
         match event {
             crate::Event::DaveMlsProposals(payload) => {
-                assert_eq!(payload.sequence_number, 2);
                 assert!(matches!(payload.operation_type, DaveMlsProposalsOperationType::Append));
                 assert_eq!(payload.proposals, vec![0xCA, 0xFE]);
             },
