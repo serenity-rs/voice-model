@@ -83,8 +83,8 @@ pub struct ChannelOptionsUpdate {
 pub struct Flags {
     /// User ID whose flags changed.
     pub user_id: UserId,
-    /// Flags bitfield.
-    pub flags: u32,
+    /// Flags bitfield. Is None for bot users.
+    pub flags: Option<u32>,
 }
 
 /// Platform information for a user.
@@ -92,8 +92,9 @@ pub struct Flags {
 pub struct Platform {
     /// User ID.
     pub user_id: UserId,
-    /// Platform code (0 = desktop, 1 = mobile, 2 = web, etc.).
-    pub platform: u32,
+    /// Platform code (0 = desktop, 1 = mobile, 2 = web, etc.). Is None for
+    /// bot users.
+    pub platform: Option<u32>,
 }
 
 /// Used to keep the websocket connection alive.
@@ -232,11 +233,9 @@ impl Default for MaxDaveProtocolVersion {
 /// credential and signature public key for the MLS group's external_senders extension.
 ///
 /// **Note:** This opcode uses binary WebSocket frames, not JSON.
-/// Binary format: `[sequence_number: u16][opcode: u8][external_sender: Vec<u8>]`
+/// Binary format: `[opcode: u8][external_sender: Vec<u8>]`
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct DaveMlsExternalSender {
-    /// Sequence number for message ordering.
-    pub sequence_number: u16,
     /// Serialized ExternalSender containing signature_key and credential.
     pub external_sender: Vec<u8>,
 }
@@ -271,11 +270,9 @@ pub enum DaveMlsProposalsOperationType {
 /// Contains either proposals to append or proposal refs to revoke.
 ///
 /// **Note:** This opcode uses binary WebSocket frames, not JSON.
-/// Binary format: `[sequence_number: u16][opcode: u8][operation_type: u8][proposals: Vec<u8>]`
+/// Binary format: `[opcode: u8][operation_type: u8][proposals: Vec<u8>]`
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct DaveMlsProposals {
-    /// Sequence number for message ordering.
-    pub sequence_number: u16,
     /// The type of operation (append or revoke).
     pub operation_type: DaveMlsProposalsOperationType,
     /// Serialized proposal data.
@@ -307,11 +304,9 @@ pub struct DaveMlsCommitWelcome {
 /// Includes the transition ID for the group transition.
 ///
 /// **Note:** This opcode uses binary WebSocket frames, not JSON.
-/// Binary format: `[sequence_number: u16][opcode: u8][transition_id: u16][welcome: Vec<u8>]`
+/// Binary format: `[opcode: u8][transition_id: u16][welcome: Vec<u8>]`
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct DaveMlsWelcome {
-    /// Sequence number for message ordering.
-    pub sequence_number: u16,
     /// The transition ID for this group transition.
     pub transition_id: u16,
     /// Serialized MLS Welcome message (see RFC 9420 Welcome definition).
@@ -368,11 +363,9 @@ pub struct DaveExecuteTransition {
 /// The commit is one received from a group member via dave_mls_commit_welcome (Opcode 28).
 ///
 /// **Note:** This opcode uses binary WebSocket frames, not JSON.
-/// Binary format: `[sequence_number: u16][opcode: u8][transition_id: u16][commit_message: Vec<u8>]`
+/// Binary format: `[opcode: u8][transition_id: u16][commit_message: Vec<u8>]`
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct DaveMlsAnnounceCommitTransition {
-    /// Sequence number for the announcement.
-    pub sequence_number: u16,
     /// The transition ID for this group epoch change.
     pub transition_id: u16,
     /// Serialized MLS commit message (see RFC 9420 MLSMessage and Commit definitions).
