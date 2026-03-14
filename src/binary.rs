@@ -44,7 +44,10 @@ fn read_u16(data: &[u8]) -> Result<u16, BinaryError> {
 
 /// Deserialize a binary message from Discord (opcodes 25, 27, 29, 30)
 pub fn deserialize_binary_event(data: &[u8]) -> Result<crate::Event, BinaryError> {
-    if data.len() < 3 {
+    // TODO: When upgrading to voice v8, the minimum size will be 3 bytes
+    // (sequence number: u16, opcode: u8). The length checks and indexes below
+    // will also need to be updated accordingly.
+    if data.len() < 1 {
         return Err(BinaryError::InsufficientData);
     }
 
