@@ -28,6 +28,7 @@ fn deserialize_identify_json() {
         token: "my_token".into(),
         server_id: GuildId(41771983423143937),
         user_id: UserId(104694319306248192),
+        max_dave_protocol_version: None,
     };
 
     assert!(matches!(event, Ok(Event::Identify(i)) if i == ident));
@@ -114,7 +115,8 @@ fn deserialize_session_description_json() {
         "op": 4,
         "d": {
             "mode": "xsalsa20_poly1305_lite",
-            "secret_key": [251, 100, 11]
+            "secret_key": [251, 100, 11],
+            "dave_protocol_version": 0
         }
     }"#;
     let event = serde_json::from_str(json_data);
@@ -122,6 +124,7 @@ fn deserialize_session_description_json() {
     let sd = SessionDescription {
         mode: "xsalsa20_poly1305_lite".into(),
         secret_key: vec![251, 100, 11],
+        dave_protocol_version: 0,
     };
 
     assert!(matches!(event, Ok(Event::SessionDescription(i)) if i == sd));
@@ -268,6 +271,7 @@ fn serialize_identify() {
         session_id: "56f88a86dce65c65b9".into(),
         token: "56f88a86dce65c65b8".into(),
         user_id: UserId(2),
+        max_dave_protocol_version: None,
     }
     .into();
 
@@ -405,7 +409,7 @@ fn serialize_heartbeat() {
         Token::Str("op"),
         Token::U8(Opcode::Heartbeat as u8),
         Token::Str("d"),
-        Token::Str("1234567890"),
+        Token::U64(1234567890),
         Token::StructEnd,
     ]);
 }
@@ -415,6 +419,7 @@ fn serialize_session_description() {
     let value: Event = SessionDescription {
         mode: "xsalsa20_poly1305_suffix".into(),
         secret_key: vec![1, 2, 3, 4, 5],
+        dave_protocol_version: 0,
     }
     .into();
 
@@ -428,7 +433,7 @@ fn serialize_session_description() {
         Token::Str("d"),
         Token::Struct {
             name: "SessionDescription",
-            len: 2,
+            len: 3,
         },
         Token::Str("mode"),
         Token::Str("xsalsa20_poly1305_suffix"),
@@ -442,6 +447,8 @@ fn serialize_session_description() {
         Token::U8(4),
         Token::U8(5),
         Token::SeqEnd,
+        Token::Str("dave_protocol_version"),
+        Token::U16(0),
         Token::StructEnd,
         Token::StructEnd,
     ]);
