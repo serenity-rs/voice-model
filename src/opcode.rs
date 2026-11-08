@@ -37,12 +37,14 @@ pub enum Opcode {
     ClientConnect = 12,
     /// Message indicating that another user has disconnected from the voice channel.
     ClientDisconnect = 13,
+    /// Session update (internal)
+    SessionUpdate = 14,
     /// Media Sink wants (internal).
-    MediaSinkWants = 14,
+    MediaSinkWants = 15,
     /// Voice backend version (internal).
-    VoiceBackendVersion = 15,
+    VoiceBackendVersion = 16,
     /// Channel options update (internal).
-    ChannelOptionsUpdate = 16,
+    ChannelOptionsUpdate = 17,
     /// Flags update (muted, deafened, etc.).
     Flags = 18,
     /// Platform information.

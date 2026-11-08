@@ -79,6 +79,12 @@ impl From<ClientsConnect> for Event {
     }
 }
 
+impl From<SessionUpdate> for Event {
+    fn from(i: SessionUpdate) -> Self {
+        Event::SessionUpdate(i)
+    }
+}
+
 impl From<MediaSinkWants> for Event {
     fn from(i: MediaSinkWants) -> Self {
         Event::MediaSinkWants(i)

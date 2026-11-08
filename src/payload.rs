@@ -1,5 +1,6 @@
 //! Message bodies used in gateway event-handling.
 
+use std::collections::BTreeMap;
 use std::net::IpAddr;
 
 use serde::{Deserialize, Serialize};
@@ -51,15 +52,26 @@ pub struct Video {
     pub user_id: Option<UserId>,
 }
 
-/// Media sink wants update (opcode 14, unused by bots).
+/// Session update (opcode 14, undocumented by discord).
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
-pub struct MediaSinkWants {
-    /// Any value - structure unknown.
-    #[serde(default)]
-    pub any: Option<u32>,
+pub struct SessionUpdate {
+    // Not filled in fields.
 }
 
-/// Voice backend version (opcode 15, unused by bots).
+/// Media sink wants update (opcode 15, undocumented by discord).
+///
+/// Documentation sourced from: https://docs.discord.food/topics/voice-connections#simulcasting
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
+pub struct MediaSinkWants {
+    /// The requested quality of all unspecified SSRCs.
+    #[serde(default)]
+    pub any: Option<u8>,
+    /// A map of "primary media SSRCs" to quality level.
+    #[serde(flatten, default)]
+    pub others: BTreeMap<u32, u8>,
+}
+
+/// Voice backend version (opcode 16, unused by bots).
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct VoiceBackendVersion {
     /// Voice backend version string.
@@ -70,7 +82,7 @@ pub struct VoiceBackendVersion {
     pub rtc_worker: String,
 }
 
-/// Channel options update (opcode 16, unused by bots).
+/// Channel options update (opcode 17, unused by bots).
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct ChannelOptionsUpdate {
     /// Any value - structure unknown.

@@ -44,6 +44,8 @@ pub enum Event {
     Video(Video),
     /// List of user IDs currently in the voice channel.
     ClientsConnect(ClientsConnect),
+    /// Session update (unused by bots)
+    SessionUpdate(SessionUpdate),
     /// Media sink wants update (unused by bots).
     MediaSinkWants(MediaSinkWants),
     /// Voice backend version (unused by bots).
@@ -96,6 +98,7 @@ impl Event {
             ClientsConnect(_) => Opcode::ClientsConnect,
             ClientConnect(_) => Opcode::ClientConnect,
             ClientDisconnect(_) => Opcode::ClientDisconnect,
+            SessionUpdate(_) => Opcode::SessionUpdate,
             MediaSinkWants(_) => Opcode::MediaSinkWants,
             VoiceBackendVersion(_) => Opcode::VoiceBackendVersion,
             ChannelOptionsUpdate(_) => Opcode::ChannelOptionsUpdate,
@@ -141,6 +144,7 @@ impl Serialize for Event {
             ClientsConnect(e) => s.serialize_field("d", e)?,
             ClientConnect(e) => s.serialize_field("d", e)?,
             ClientDisconnect(e) => s.serialize_field("d", e)?,
+            SessionUpdate(e) => s.serialize_field("d", e)?,
             MediaSinkWants(e) => s.serialize_field("d", e)?,
             VoiceBackendVersion(e) => s.serialize_field("d", e)?,
             ChannelOptionsUpdate(e) => s.serialize_field("d", e)?,
@@ -226,6 +230,9 @@ impl<'de> Visitor<'de> for EventVisitor {
                     Some(Opcode::ClientDisconnect) => {
                         return Ok(map.next_value::<ClientDisconnect>()?.into());
                     },
+                    Some(Opcode::SessionUpdate) => {
+                        return Ok(map.next_value::<SessionUpdate>()?.into());
+                    }
                     Some(Opcode::MediaSinkWants) => {
                         return Ok(map.next_value::<MediaSinkWants>()?.into());
                     },
@@ -311,6 +318,7 @@ impl<'de> Visitor<'de> for EventVisitor {
             Opcode::ClientsConnect => serde_json::from_str::<ClientsConnect>(d).map(Into::into),
             Opcode::ClientConnect => serde_json::from_str::<ClientConnect>(d).map(Into::into),
             Opcode::ClientDisconnect => serde_json::from_str::<ClientDisconnect>(d).map(Into::into),
+            Opcode::SessionUpdate => serde_json::from_str::<SessionUpdate>(d).map(Into::into),
             Opcode::MediaSinkWants => serde_json::from_str::<MediaSinkWants>(d).map(Into::into),
             Opcode::VoiceBackendVersion =>
                 serde_json::from_str::<VoiceBackendVersion>(d).map(Into::into),
