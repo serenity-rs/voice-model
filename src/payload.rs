@@ -1,5 +1,6 @@
 //! Message bodies used in gateway event-handling.
 
+use std::collections::BTreeMap;
 use std::net::IpAddr;
 
 use serde::{Deserialize, Serialize};
@@ -51,15 +52,29 @@ pub struct Video {
     pub user_id: Option<UserId>,
 }
 
-/// Media sink wants update (opcode 14, unused by bots).
+/// Session update (opcode 14, undocumented by discord).
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
-pub struct MediaSinkWants {
-    /// Any value - structure unknown.
-    #[serde(default)]
-    pub any: Option<u32>,
+pub struct SessionUpdate {
+    // Not filled in fields.
 }
 
-/// Voice backend version (opcode 15, unused by bots).
+/// Media sink wants update (opcode 15, undocumented by discord).
+///
+/// Documentation sourced from: https://docs.discord.food/topics/voice-connections#simulcasting
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
+pub struct MediaSinkWants {
+    /// The requested quality of all unspecified SSRCs.
+    #[serde(default)]
+    pub any: Option<u8>,
+    /// A map of "primary media SSRCs" to quality level.
+    #[serde(flatten, default)]
+    pub others: BTreeMap<String, u8>,
+    /// Map of desired video pixel count, keyed by SSRC.
+    #[serde(default, rename = "pixelCounts", skip_serializing_if = "BTreeMap::is_empty")]
+    pub pixel_counts: BTreeMap<String, u32>,
+}
+
+/// Voice backend version (opcode 16, unused by bots).
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct VoiceBackendVersion {
     /// Voice backend version string.
@@ -70,7 +85,7 @@ pub struct VoiceBackendVersion {
     pub rtc_worker: String,
 }
 
-/// Channel options update (opcode 16, unused by bots).
+/// Channel options update (opcode 17, unused by bots).
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct ChannelOptionsUpdate {
     /// Any value - structure unknown.
@@ -380,4 +395,63 @@ pub struct DaveMlsAnnounceCommitTransition {
 pub struct DaveMlsInvalidCommitWelcome {
     /// The transition ID in which the invalid Commit or Welcome was received.
     pub transition_id: u16,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_roundtrip<T: Serialize + Deserialize<'static> + Eq + std::fmt::Debug>(
+        val: T,
+        expected: &'static str,
+    ) {
+        assert_eq!(serde_json::to_string(&val).unwrap(), expected);
+        assert_eq!(serde_json::from_str::<T>(expected).unwrap(), val);
+    }
+
+    #[test]
+    fn ensure_media_sink_serde() {
+        let allow_all = MediaSinkWants {
+            any: Some(100),
+            others: BTreeMap::new(),
+            pixel_counts: BTreeMap::new(),
+        };
+
+        assert_roundtrip(allow_all, r#"{"any":100}"#);
+
+        let allow_none = MediaSinkWants {
+            any: Some(0),
+            others: BTreeMap::new(),
+            pixel_counts: BTreeMap::new(),
+        };
+
+        assert_roundtrip(allow_none, r#"{"any":0}"#);
+
+        let allow_all_except_two = MediaSinkWants {
+            any: Some(100),
+            others: BTreeMap::from([("123".into(), 0), ("124".into(), 0)]),
+            pixel_counts: BTreeMap::new(),
+        };
+
+        assert_roundtrip(allow_all_except_two, r#"{"any":100,"123":0,"124":0}"#);
+
+        let allow_none_except_two = MediaSinkWants {
+            any: Some(0),
+            others: BTreeMap::from([("123".into(), 100), ("124".into(), 100)]),
+            pixel_counts: BTreeMap::new(),
+        };
+
+        assert_roundtrip(allow_none_except_two, r#"{"any":0,"123":100,"124":100}"#);
+
+        let allow_all_except_two_with_pixels = MediaSinkWants {
+            any: Some(100),
+            others: BTreeMap::from([("123".into(), 0), ("124".into(), 0)]),
+            pixel_counts: BTreeMap::from([("125".into(), 1920 * 1080)]),
+        };
+
+        assert_roundtrip(
+            allow_all_except_two_with_pixels,
+            r#"{"any":100,"123":0,"124":0,"pixelCounts":{"125":2073600}}"#,
+        );
+    }
 }
