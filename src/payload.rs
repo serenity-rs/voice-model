@@ -68,7 +68,7 @@ pub struct MediaSinkWants {
     pub any: Option<u8>,
     /// A map of "primary media SSRCs" to quality level.
     #[serde(flatten, default)]
-    pub others: BTreeMap<u32, u8>,
+    pub others: BTreeMap<String, u8>,
 }
 
 /// Voice backend version (opcode 16, unused by bots).
@@ -392,4 +392,48 @@ pub struct DaveMlsAnnounceCommitTransition {
 pub struct DaveMlsInvalidCommitWelcome {
     /// The transition ID in which the invalid Commit or Welcome was received.
     pub transition_id: u16,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_roundtrip<T: Serialize + Deserialize<'static> + Eq + std::fmt::Debug>(
+        val: T,
+        expected: &'static str,
+    ) {
+        assert_eq!(serde_json::to_string(&val).unwrap(), expected);
+        assert_eq!(serde_json::from_str::<T>(expected).unwrap(), val);
+    }
+
+    #[test]
+    fn ensure_media_sink_serde() {
+        let allow_all = MediaSinkWants {
+            any: Some(100),
+            others: BTreeMap::new(),
+        };
+
+        assert_roundtrip(allow_all, r#"{"any":100}"#);
+
+        let allow_none = MediaSinkWants {
+            any: Some(0),
+            others: BTreeMap::new(),
+        };
+
+        assert_roundtrip(allow_none, r#"{"any":0}"#);
+
+        let allow_all_except_two = MediaSinkWants {
+            any: Some(100),
+            others: BTreeMap::from([("123".into(), 0), ("124".into(), 0)]),
+        };
+
+        assert_roundtrip(allow_all_except_two, r#"{"any":100,"123":0,"124":0}"#);
+
+        let allow_none_except_two = MediaSinkWants {
+            any: Some(0),
+            others: BTreeMap::from([("123".into(), 100), ("124".into(), 100)]),
+        };
+
+        assert_roundtrip(allow_none_except_two, r#"{"any":0,"123":100,"124":100}"#)
+    }
 }
